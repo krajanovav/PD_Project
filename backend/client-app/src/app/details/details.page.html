@@ -1,0 +1,29 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Employee Details</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-item>
+    <ion-label position="floating">Name</ion-label>
+    <ion-input [(ngModel)]="employee.name"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="floating">Position</ion-label>
+    <ion-input [(ngModel)]="employee.position"></ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="floating">Department ID</ion-label>
+    <ion-input [(ngModel)]="employee.departmentId"></ion-input>
+  </ion-item>
+
+  <ion-button expand="full" color="primary" (click)="saveEmployee()">
+    Save
+  </ion-button>
+  <ion-button expand="full" color="danger" (click)="deleteEmployee()" *ngIf="!isNew">
+    Delete
+  </ion-button>
+</ion-content>
