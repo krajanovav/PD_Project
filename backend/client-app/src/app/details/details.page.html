@@ -1,29 +1,34 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Employee Details</ion-title>
+    <ion-title>{{ isNew ? 'Add New Employee' : 'Edit Employee' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveEmployee()">Save</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
   <ion-item>
     <ion-label position="floating">Name</ion-label>
-    <ion-input [(ngModel)]="employee.name"></ion-input>
+    <ion-input [(ngModel)]="employee.name" required></ion-input>
   </ion-item>
 
   <ion-item>
     <ion-label position="floating">Position</ion-label>
-    <ion-input [(ngModel)]="employee.position"></ion-input>
+    <ion-input [(ngModel)]="employee.position" required></ion-input>
   </ion-item>
 
   <ion-item>
-    <ion-label position="floating">Department ID</ion-label>
-    <ion-input [(ngModel)]="employee.departmentId"></ion-input>
+    <ion-label>Department</ion-label>
+    <ion-select [(ngModel)]="selectedDepartmentId">
+      <ion-select-option *ngFor="let department of departments" [value]="department._id">
+        {{ department.name }}
+      </ion-select-option>
+    </ion-select>
   </ion-item>
+  
 
-  <ion-button expand="full" color="primary" (click)="saveEmployee()">
-    Save
-  </ion-button>
-  <ion-button expand="full" color="danger" (click)="deleteEmployee()" *ngIf="!isNew">
+  <ion-button expand="full" color="danger" *ngIf="!isNew" (click)="deleteEmployee()">
     Delete
   </ion-button>
 </ion-content>

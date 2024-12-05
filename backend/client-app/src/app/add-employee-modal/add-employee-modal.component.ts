@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import axios from 'axios';
 import { ModalController } from '@ionic/angular';
 
 @Component({
@@ -6,23 +7,45 @@ import { ModalController } from '@ionic/angular';
   templateUrl: './add-employee-modal.component.html',
   styleUrls: ['./add-employee-modal.component.scss'],
 })
-export class AddEmployeeModalComponent {
-  newEmployee = {
-    name: '',
-    position: '',
-    departmentId: ''
-  };
+export class AddEmployeeModalComponent implements OnInit {
+  @Input() employee: any = { name: '', position: '', departmentId: '' };
+  isNew: boolean = true; // To track if it's a new or existing employee
 
   constructor(private modalController: ModalController) {}
 
-  // Zavření modalu a vrácení dat do HomePage
-  dismiss() {
-    this.modalController.dismiss(this.newEmployee);  // Odesíláme data zpět do HomePage
+  ngOnInit() {
+    if (this.employee._id) {
+      this.isNew = false;
+    }
   }
 
-  // Metoda pro odeslání formuláře
-  async addEmployee() {
-    // Předpokládejme, že nějaká validace byla provedena
-    this.dismiss();  // Zavře modal a odešle data zpět
+  async saveEmployee() {
+    if (!this.employee.name || !this.employee.position || !this.employee.departmentId) {
+      alert('All fields are required!');
+      return;
+    }
+
+    try {
+      if (this.isNew) {
+        const response = await axios.post('http://localhost:3000/api/employees', this.employee);
+        console.log('Employee added:', response.data);
+      } else {
+        const response = await axios.put(`http://localhost:3000/api/employees/${this.employee._id}`, this.employee);
+        console.log('Employee updated:', response.data);
+      }
+      this.modalController.dismiss(); // Close modal after save
+    } catch (error) {
+      console.error('Error saving employee:', error);
+    }
+  }
+
+  async deleteEmployee() {
+    try {
+      await axios.delete(`http://localhost:3000/api/employees/${this.employee._id}`);
+      console.log('Employee deleted');
+      this.modalController.dismiss(); // Close modal after delete
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+    }
   }
 }
