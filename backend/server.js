@@ -4,33 +4,14 @@ const cors = require('cors');
 
 const app = express();
 
-// Povolení CORS pro komunikaci mezi frontendem a backendem
 app.use(cors());
 app.use(express.json()); // Povolení JSON těla pro POST požadavky
 
 // Připojení k MongoDB
 const mongoUri = 'mongodb://localhost:27017/mydatabase'; // Lokální MongoDB
-// Pokud používáš MongoDB Atlas:
-// const mongoUri = 'mongodb+srv://<username>:<password>@cluster0.mongodb.net/mydatabase';
-
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Připojeno k MongoDB'))
   .catch((err) => console.log('Chyba při připojování k MongoDB:', err));
-
-// Model pro Product (produkty)
-const ProductSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  price: { type: Number, required: true },
-});
-const Product = mongoose.model('Product', ProductSchema);
-
-const EmployeeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  position: { type: String, required: true },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, // Odkaz na oddělení
-});
-const Employee = mongoose.model('Employee', EmployeeSchema);
-
 
 // Model pro Department (oddělení)
 const DepartmentSchema = new mongoose.Schema({
@@ -39,33 +20,20 @@ const DepartmentSchema = new mongoose.Schema({
 });
 const Department = mongoose.model('Department', DepartmentSchema);
 
-// Route pro získání všech produktů
-app.get('/api/products', (req, res) => {
-  Product.find({}, (err, products) => {
-    if (err) {
-      return res.status(500).json({ message: 'Chyba při načítání produktů' });
-    }
-    res.json(products); // Odeslání seznamu produktů jako JSON
-  });
+// Model pro Employee (zaměstnanec) s vlastním ID
+const EmployeeSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  position: { type: String, required: true },
+  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, // Odkaz na oddělení
+  seqId: { type: Number, unique: true }, // Sekvenční ID pro zaměstnanca
 });
+const Employee = mongoose.model('Employee', EmployeeSchema);
 
-// Route pro přidání nového produktu
-app.post('/api/products', (req, res) => {
-  const newProduct = new Product(req.body);
-  newProduct.save((err, product) => {
-    if (err) {
-      return res.status(500).json({ message: 'Chyba při ukládání produktu' });
-    }
-    res.status(201).json(product); // Odeslání nového produktu jako JSON
-  });
-});
-
-// **Tato část je pro získání všech zaměstnanců**
 // Route pro získání všech zaměstnanců
 app.get('/api/employees', (req, res) => {
-  Employee.find().populate('department') // Získání zaměstnanců a jejich oddělení
+  Employee.find().populate('department').sort({ seqId: 1 }) // Seřazení podle sekvenčního ID
     .then((employees) => {
-      res.json(employees); // Odeslání seznamu zaměstnanců jako JSON
+      res.json(employees);
     })
     .catch((err) => {
       res.status(500).json({ message: 'Chyba při získávání zaměstnanců' });
@@ -73,24 +41,47 @@ app.get('/api/employees', (req, res) => {
 });
 
 // Route pro přidání nového zaměstnanca
-app.post('/api/employees', (req, res) => {
+app.post('/api/employees', async (req, res) => {
   const { name, position, departmentId } = req.body;
-  console.log('Data přijatá na serveru:', req.body); // Přidali jsme log pro ladění
 
-  const newEmployee = new Employee({
-    name,
-    position,
-    department: departmentId, // Odkaz na oddělení
-  });
+  try {
+    // Získání maximálního seqId z databáze
+    const maxEmployee = await Employee.findOne().sort({ seqId: -1 });
+    const nextSeqId = maxEmployee ? maxEmployee.seqId + 1 : 1; // Sekvenční ID se nastaví podle max id nebo začneme od 1
 
-  newEmployee.save()
-    .then((employee) => {
-      console.log('Zaměstnanec přidán:', employee);  // Log pro úspěšné uložení
-      res.status(201).json(employee);  // Odeslání odpovědi
+    const newEmployee = new Employee({
+      name,
+      position,
+      department: departmentId,
+      seqId: nextSeqId, // Nastavení sekvenčního ID
+    });
+
+    await newEmployee.save();
+    res.status(201).json(newEmployee);
+  } catch (err) {
+    res.status(500).json({ message: 'Chyba při přidávání zaměstnanca' });
+  }
+});
+
+
+app.delete('/api/employees/:id', (req, res) => {
+  const employeeId = req.params.id;
+  console.log(`Mazání zaměstnanca s ID: ${employeeId}`);
+
+  if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+    return res.status(400).json({ message: 'Neplatné ID' });
+  }
+
+  Employee.findByIdAndDelete(employeeId)
+    .then((result) => {
+      if (!result) {
+        return res.status(404).json({ message: 'Zaměstnanec nenalezen' });
+      }
+      res.json({ message: 'Zaměstnanec byl smazán' });
     })
     .catch((err) => {
-      console.error('Chyba při přidávání zaměstnanca:', err);
-      res.status(500).json({ message: 'Chyba při přidávání zaměstnanca' });
+      console.error('Chyba při mazání:', err);
+      res.status(500).json({ message: 'Chyba při mazání zaměstnanca' });
     });
 });
 
@@ -100,20 +91,19 @@ app.post('/api/employees', (req, res) => {
 
 
 
+// Route pro aktualizaci zaměstnanca
+app.put('/api/employees/:id', (req, res) => {
+  const { name, position, departmentId } = req.body;
 
-
-
-// Route pro získání konkrétního zaměstnanca podle ID
-app.get('/api/employees/:id', (req, res) => {
-  Employee.findById(req.params.id).populate('department')
-    .then((employee) => {
-      if (!employee) {
+  Employee.findByIdAndUpdate(req.params.id, { name, position, department: departmentId }, { new: true })
+    .then((updatedEmployee) => {
+      if (!updatedEmployee) {
         return res.status(404).json({ message: 'Zaměstnanec nenalezen' });
       }
-      res.json(employee); // Odeslání dat o konkrétním zaměstnanci jako JSON
+      res.json(updatedEmployee);
     })
     .catch((err) => {
-      res.status(500).json({ message: 'Chyba při získávání zaměstnanca' });
+      res.status(500).json({ message: 'Chyba při aktualizaci zaměstnanca' });
     });
 });
 

@@ -18,8 +18,12 @@
         <p>{{ employee.position }}</p>
         <p *ngIf="employee.department">Department: {{ employee.department.name }}</p>
       </ion-label>
+      <ion-button (click)="editEmployee(employee)">Edit</ion-button>
+
+      <ion-button (click)="deleteEmployee(employee._id)" color="danger">Delete</ion-button>
     </ion-item>
   </ion-list>
+  
 
   <ion-button expand="full" (click)="showAddEmployeeForm()">Add New Employee</ion-button>
 

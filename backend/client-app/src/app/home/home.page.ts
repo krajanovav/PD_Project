@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import axios from 'axios';
-import { AddEmployeeModalComponent } from '../add-employee-modal/add-employee-modal.component'; // Importuj novou komponentu
+import { AddEmployeeModalComponent } from '../add-employee-modal/add-employee-modal.component';
 
 @Component({
   selector: 'app-home',
@@ -12,12 +12,14 @@ export class HomePage implements OnInit {
   employees: any[] = [];
   searchQuery: string = '';
   
-  // Přidejte definici pro newEmployee a showForm
+  // Přidání _id do typu
   newEmployee = {
+    _id: '', // Přidání _id
     name: '',
     position: '',
     departmentId: ''
   };
+
   showForm: boolean = false;
 
   constructor(private modalController: ModalController) {}
@@ -34,7 +36,6 @@ export class HomePage implements OnInit {
       console.error('Chyba při načítání zaměstnanců:', error);
     }
   }
-  
 
   async searchEmployees() {
     try {
@@ -45,31 +46,57 @@ export class HomePage implements OnInit {
     }
   }
 
-  // Otevře modal pro přidání nového zaměstnanca
   async showAddEmployeeForm() {
     const modal = await this.modalController.create({
-      component: AddEmployeeModalComponent,  // Tato komponenta bude zobrazena jako modal
-      cssClass: 'my-custom-class',  // Volitelný CSS třída
+      component: AddEmployeeModalComponent,
+      cssClass: 'my-custom-class',
     });
     return await modal.present();
   }
-  
+
   async addEmployee() {
-    console.log('Data, která posílám na backend:', this.newEmployee);  // Debugging log pro kontrolu dat
+    if (!this.newEmployee.name || !this.newEmployee.position || !this.newEmployee.departmentId) {
+      alert('Všechna pole musí být vyplněna!');
+      return;
+    }
+
     try {
-      const response = await axios.post('http://localhost:3000/api/employees', this.newEmployee);
-      console.log('Nový zaměstnanec přidán:', response.data);  // Log pro ověření odpovědi
-      this.loadEmployees();  // Načítání zaměstnanců znovu
-      this.showForm = false;  // Zavření formuláře
-      this.newEmployee = { name: '', position: '', departmentId: '' };  // Resetování formuláře
+      if (this.newEmployee._id) {
+        // Pokud má nový zaměstnanec _id, provádí se aktualizace
+        const response = await axios.put(`http://localhost:3000/api/employees/${this.newEmployee._id}`, this.newEmployee);
+        console.log('Zaměstnanec upraven:', response.data);
+      } else {
+        // Pokud nemá _id, provádí se přidání
+        const response = await axios.post('http://localhost:3000/api/employees', this.newEmployee);
+        console.log('Nový zaměstnanec přidán:', response.data);
+      }
+      this.loadEmployees();
+      this.showForm = false;
+      this.newEmployee = { _id: '', name: '', position: '', departmentId: '' }; // Resetování formuláře
     } catch (error) {
-      console.error('Chyba při přidávání zaměstnanca:', error);
+      console.error('Chyba při přidávání/aktualizaci zaměstnanca:', error);
+    }
+  }
+
+  async deleteEmployee(employeeId: string) {
+    try {
+      // Zkontroluj správnost URL v konzoli
+      console.log("Mazání zaměstnanca s ID:", employeeId);
+      console.log("Mazání URL:", `http://localhost:3000/api/employees/${employeeId}`);
+  
+      await axios.delete(`http://localhost:3000/api/employees/${employeeId}`);
+      console.log('Zaměstnanec smazán');
+      this.loadEmployees(); // Načítání seznamu zaměstnanců po smazání
+    } catch (error) {
+      console.error('Chyba při mazání zaměstnanca:', error);
     }
   }
   
   
   
-  
-  
-  
+
+  async editEmployee(employee: any) {
+    this.newEmployee = { ...employee }; // Naplnění formuláře daty zaměstnanca, včetně _id
+    this.showForm = true; // Otevření formuláře pro úpravu
+  }
 }
