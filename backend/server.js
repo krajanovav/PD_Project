@@ -15,10 +15,11 @@ mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
 
 // Model pro Department (oddělení)
 const DepartmentSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  departmentName: { type: String, required: true },
   location: { type: String, required: true },
 });
-const Department = mongoose.model('Department', DepartmentSchema);  // Tento řádek přidáme pro model Department
+
+const Department = mongoose.model('Department', DepartmentSchema);  // Definujeme model pro Department
 
 // Model pro Employee (zaměstnanec) s vlastním ID
 const EmployeeSchema = new mongoose.Schema({
@@ -29,9 +30,13 @@ const EmployeeSchema = new mongoose.Schema({
 });
 const Employee = mongoose.model('Employee', EmployeeSchema);
 
+
+
 // Route pro získání všech zaměstnanců
 app.get('/api/employees', (req, res) => {
-  Employee.find().populate('department').sort({ seqId: 1 }) // Seřazení podle sekvenčního ID
+  Employee.find()
+    .populate('department')  // Načteme detaily oddělení
+    .sort({ seqId: 1 }) // Seřazení podle sekvenčního ID
     .then((employees) => {
       res.json(employees);
     })
@@ -40,63 +45,42 @@ app.get('/api/employees', (req, res) => {
     });
 });
 
+// Route pro přidání nového zaměstnance
 app.post('/api/employees', async (req, res) => {
   const { name, position, departmentId } = req.body;
 
-  // Zkontroluj, zda je departmentId přítomno v těle požadavku
   if (!departmentId || !name || !position) {
     return res.status(400).json({ message: 'Name, position, and departmentId are required' });
   }
 
   try {
-    // Ověření, že departmentId je platné ObjectId
-    const departmentObjectId = mongoose.Types.ObjectId(departmentId);
+    // Převeďte `departmentId` na ObjectId
+    const departmentObjectId = new mongoose.Types.ObjectId(departmentId);
 
-    // Ověření, zda oddělení existuje v databázi
+    // Zkontrolujte, zda oddělení existuje
     const department = await Department.findById(departmentObjectId);
     if (!department) {
       return res.status(400).json({ message: 'Department does not exist' });
     }
 
-    // Získání maximálního seqId pro nový záznam
-    const maxEmployee = await Employee.findOne().sort({ seqId: -1 });
-    const nextSeqId = maxEmployee ? maxEmployee.seqId + 1 : 1;
-
-    // Vytvoření nového zaměstnanca
+    // Vytvořte nového zaměstnanca s departmentId
     const newEmployee = new Employee({
-      
       name,
       position,
-      department: departmentObjectId,  // Používáme departmentObjectId
-      seqId: nextSeqId,
+      departmentId: departmentObjectId,  // Používáme departmentId místo department
     });
 
-    // Uložení nového zaměstnanca
+    // Uložení do databáze
     await newEmployee.save();
-    res.status(201).json(newEmployee);  // Odeslání odpovědi s novým zaměstnancem
+    res.status(201).json(newEmployee);
   } catch (err) {
     console.error('Error adding employee:', err);
-    res.status(500).json({
-      message: 'Error adding employee',
-      error: err.message,
-      stack: err.stack,  // Stack trace for more details
-    });
+    res.status(500).json({ message: 'Error adding employee', error: err.message });
   }
-  
 });
 
 
-// Route pro získání všech oddělení
-app.get('/api/departments', (req, res) => {
-  Department.find()
-    .then((departments) => {
-      res.json(departments);  // Odeslání seznamu oddělení
-    })
-    .catch((err) => {
-      console.error('Chyba při získávání oddělení:', err);
-      res.status(500).json({ message: 'Chyba při získávání oddělení' });
-    });
-});
+
 
 app.delete('/api/employees/:id', (req, res) => {
   const employeeId = req.params.id;
@@ -119,18 +103,17 @@ app.delete('/api/employees/:id', (req, res) => {
     });
 });
 
-app.put('/api/employees/:id', (req, res) => {
-  const { name, position, departmentId } = req.body;
 
-  Employee.findByIdAndUpdate(req.params.id, { name, position, department: departmentId }, { new: true })
-    .then((updatedEmployee) => {
-      if (!updatedEmployee) {
-        return res.status(404).json({ message: 'Zaměstnanec nenalezen' });
-      }
-      res.json(updatedEmployee);
+
+// Route pro získání všech oddělení
+app.get('/api/departments', (req, res) => {
+  Department.find()
+    .then((departments) => {
+      res.json(departments);  // Odeslání seznamu oddělení
     })
     .catch((err) => {
-      res.status(500).json({ message: 'Chyba při aktualizaci zaměstnanca' });
+      console.error('Chyba při získávání oddělení:', err);
+      res.status(500).json({ message: 'Chyba při získávání oddělení' });
     });
 });
 

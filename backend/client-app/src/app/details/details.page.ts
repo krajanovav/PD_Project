@@ -49,23 +49,33 @@ export class DetailsPage implements OnInit {
   }
 
   // Uložení nového nebo upraveného zaměstnanca
+  // Příklad při uložení nového zaměstnanca
   async saveEmployee() {
     try {
       console.log("Ukládám zaměstnanca:", this.employee);
-
+  
+      // Opraveno: Odesíláme departmentId místo celého objektu department
+      this.employee.departmentId = this.selectedDepartmentId;  // Nastavíme departmentId
+  
       if (this.isNew) {
-        this.employee.department = this.selectedDepartmentId;  // Nastavíme vybrané oddělení
+        // Odesíláme POST pro nový záznam
         await axios.post('http://localhost:3000/api/employees', this.employee);
       } else {
-        this.employee.department = this.selectedDepartmentId;  // Nastavíme vybrané oddělení
+        // Odesíláme PUT pro úpravu existujícího záznamu
         await axios.put(`http://localhost:3000/api/employees/${this.employee._id}`, this.employee);
       }
+  
+      // Po úspěšném uložení přesměrujeme na Home
       this.router.navigate(['/home']);
     } catch (error) {
       console.error('Chyba při ukládání zaměstnanca:', error);
     }
   }
+  
+  
 
+  
+  
   // Smazání zaměstnanca
   async deleteEmployee() {
     try {

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import axios from 'axios';
-import { AddEmployeeModalComponent } from '../add-employee-modal/add-employee-modal.component';
+import { Router } from '@angular/router'; // Nezapomeň importovat Router pro navigaci
 
 @Component({
   selector: 'app-home',
@@ -11,22 +11,30 @@ import { AddEmployeeModalComponent } from '../add-employee-modal/add-employee-mo
 export class HomePage implements OnInit {
   employees: any[] = [];
   searchQuery: string = '';
-  
-  constructor(private modalController: ModalController) {}
+
+  constructor(private modalController: ModalController, private router: Router) {}
 
   ngOnInit() {
-    this.loadEmployees();
+    this.loadEmployees();  // Načteme seznam zaměstnanců při startu
   }
 
+  // Načtení zaměstnanců
   async loadEmployees() {
     try {
       const response = await axios.get('http://localhost:3000/api/employees');
+      console.log('Loaded employees:', response.data);  // Log to check response
       this.employees = response.data;
     } catch (error) {
       console.error('Error loading employees:', error);
     }
   }
 
+  // Při návratu na stránku Home z detailu zaměstnanca (po přidání nebo úpravě)
+  ionViewWillEnter() {
+    this.loadEmployees();  // Načteme zaměstnanci znovu při každém návratu na tuto stránku
+  }
+
+  // Vyhledávání zaměstnanců podle dotazu
   async searchEmployees() {
     try {
       const response = await axios.get(`http://localhost:3000/api/employees/search/${this.searchQuery}`);
@@ -36,14 +44,12 @@ export class HomePage implements OnInit {
     }
   }
 
+  // Zobrazení formuláře pro přidání nového zaměstnanca
   async showAddEmployeeForm() {
-    const modal = await this.modalController.create({
-      component: AddEmployeeModalComponent,
-      cssClass: 'my-custom-class',
-    });
-    return await modal.present();
+    this.router.navigate(['/details', 'new']);
   }
 
+  // Mazání zaměstnanca
   async deleteEmployee(employeeId: string) {
     try {
       await axios.delete(`http://localhost:3000/api/employees/${employeeId}`);
@@ -54,11 +60,8 @@ export class HomePage implements OnInit {
     }
   }
 
+  // Úprava zaměstnanca
   async editEmployee(employee: any) {
-    const modal = await this.modalController.create({
-      component: AddEmployeeModalComponent,
-      componentProps: { employee }, // Passing employee data for edit
-    });
-    return await modal.present();
+    this.router.navigate(['/details', employee._id]);
   }
 }
