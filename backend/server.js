@@ -142,6 +142,38 @@ app.get('/api/employees/:id', (req, res) => {
 });
 
 
+app.put('/api/employees/:id', async (req, res) => {
+  const employeeId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+    return res.status(400).json({ message: 'Invalid employee ID' });
+  }
+
+  const { name, position, departmentId } = req.body;
+
+  if (!name || !position || !departmentId) {
+    return res.status(400).json({ message: 'Name, position, and departmentId are required' });
+  }
+
+  try {
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      employeeId,
+      { name, position, departmentId },
+      { new: true }
+    );
+
+    if (!updatedEmployee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    res.json(updatedEmployee);
+  } catch (err) {
+    console.error('Error updating employee:', err);
+    res.status(500).json({ message: 'Error updating employee', error: err.message });
+  }
+});
+
+
 // Spuštění serveru na portu 3000
 app.listen(3000, () => {
   console.log('Server běží na http://localhost:3000');
