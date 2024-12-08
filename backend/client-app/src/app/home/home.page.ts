@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { ModalController } from '@ionic/angular';
 import axios from 'axios';
 import { Router } from '@angular/router';
 
@@ -10,15 +9,19 @@ import { Router } from '@angular/router';
 })
 export class HomePage implements OnInit {
   employees: any[] = [];
-  departments: any[] = []; // List of departments
+  departments: any[] = [];
   searchQuery: string = '';
-  selectedDepartment: string = ''; // Selected department ID for filtering
+  selectedDepartment: string = '';
 
-  constructor(private modalController: ModalController, private router: Router) {}
+  constructor(private router: Router) {}
 
   ngOnInit() {
-    this.loadEmployees(); // Load employees
-    this.loadDepartments(); // Load departments
+    this.loadEmployees();
+    this.loadDepartments();
+  }
+
+  ionViewWillEnter() {
+    this.fetchEmployees(); // Zajistí aktualizaci seznamu při návratu na domovskou stránku
   }
 
   // Load all employees
@@ -26,12 +29,10 @@ export class HomePage implements OnInit {
     try {
       const response = await axios.get('http://localhost:3000/api/employees');
       this.employees = response.data;
-      console.log(this.employees); // Debug log
     } catch (error) {
       console.error('Error loading employees:', error);
     }
   }
-  
 
   // Load all departments
   async loadDepartments() {
@@ -43,52 +44,52 @@ export class HomePage implements OnInit {
     }
   }
 
-  // Search employees based on query
-  async searchEmployees() {
+  // Fetch employees based on search query and department filter
+  async fetchEmployees() {
     try {
-      if (!this.searchQuery.trim()) {
-        // Load all employees if search query is empty
-        this.loadEmployees();
-        return;
+      let url = 'http://localhost:3000/api/employees';
+      const queryParams: string[] = [];
+  
+      if (this.searchQuery.trim()) {
+        queryParams.push(`query=${this.searchQuery.trim()}`);
       }
-
-      const response = await axios.get(`http://localhost:3000/api/employees/search/${this.searchQuery}`);
+      if (this.selectedDepartment) {
+        queryParams.push(`department=${this.selectedDepartment}`);
+      }
+  
+      if (queryParams.length > 0) {
+        url += `?${queryParams.join('&')}`;
+      }
+  
+      const response = await axios.get(url);
       this.employees = response.data;
     } catch (error) {
-      console.error('Error searching employees:', error);
+      console.error('Error fetching employees:', error);
     }
   }
 
-  // Filter employees by selected department
-  async filterByDepartment() {
-    try {
-      if (!this.selectedDepartment) {
-        // Load all employees if no department is selected
-        this.loadEmployees();
-        return;
-      }
+  // Handle search input
+  searchEmployees() {
+    this.fetchEmployees();
+  }
 
-      // Filter employees by department
-      const response = await axios.get(`http://localhost:3000/api/employees?department=${this.selectedDepartment}`);
-      this.employees = response.data;
-    } catch (error) {
-      console.error('Error filtering employees:', error);
-    }
+  // Handle department filter change
+  filterByDepartment() {
+    this.fetchEmployees();
   }
 
   // Delete an employee
   async deleteEmployee(employeeId: string) {
     try {
       await axios.delete(`http://localhost:3000/api/employees/${employeeId}`);
-      this.loadEmployees(); // Reload employee list after deletion
+      this.fetchEmployees();
     } catch (error) {
       console.error('Error deleting employee:', error);
     }
   }
 
   // Navigate to edit employee page
-  async editEmployee(employee: any) {
+  editEmployee(employee: any) {
     this.router.navigate(['/details', employee._id]);
   }
-  
 }

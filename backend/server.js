@@ -38,20 +38,31 @@ const Employee = mongoose.model('Employee', EmployeeSchema);
 
 // Routes
 
-// Route for fetching employees (with optional department filtering)
-app.get('/api/employees', (req, res) => {
-  const { department } = req.query;
+// Route for fetching employees with optional query and department filtering
+app.get('/api/employees', async (req, res) => {
+  const { query, department } = req.query;
 
-  const query = department ? { departmentId: department } : {};
+  const filter = {};
 
-  Employee.find(query)
-    .populate('departmentId')
-    .then((employees) => res.json(employees))
-    .catch((err) => {
-      console.error('Error fetching employees:', err);
-      res.status(500).json({ message: 'Error fetching employees' });
-    });
+  // Add department filter if provided
+  if (department) {
+    filter.departmentId = department;
+  }
+
+  // Add query filter if provided
+  if (query) {
+    filter.name = { $regex: query, $options: 'i' }; // Search by name (case-insensitive)
+  }
+
+  try {
+    const employees = await Employee.find(filter).populate('departmentId');
+    res.json(employees);
+  } catch (err) {
+    console.error('Error fetching employees:', err);
+    res.status(500).json({ message: 'Error fetching employees' });
+  }
 });
+
 
 // Route for adding a new employee
 app.post('/api/employees', async (req, res) => {

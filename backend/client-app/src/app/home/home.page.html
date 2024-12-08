@@ -5,6 +5,14 @@
 </ion-header>
 
 <ion-content>
+  <ion-item>
+    <ion-searchbar
+      [(ngModel)]="searchQuery"
+      (ionInput)="searchEmployees()"
+      placeholder="Search employees"
+    ></ion-searchbar>
+    <ion-button [routerLink]="['/details', 'new']" color="primary" slot="end">Add</ion-button>
+  </ion-item>
   <!-- Department Filter -->
   <ion-item>
     <ion-label>Filter by Department</ion-label>
