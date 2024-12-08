@@ -18,25 +18,39 @@ export class DetailsPage implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id === 'new') {
-      this.isNew = true;  // Pokud je ID 'new', tak se jedná o nový záznam
+      this.isNew = true;
+      console.log('Creating a new employee');
     } else if (id) {
-      this.loadEmployee(id);  // Pokud je ID, načteme existujícího zaměstnanca
+      console.log('Editing employee with ID:', id);
+      this.loadEmployee(id); // Načteme zaměstnance
     } else {
       console.error('No employee ID found in route');
     }
-    this.loadDepartments();  // Načteme seznam oddělení
+    this.loadDepartments(); // Načteme seznam oddělení
   }
+  
 
   // Načtení detailu zaměstnanca pro editaci
   async loadEmployee(id: string) {
     try {
+      console.log('Loading employee with ID:', id);
       const response = await axios.get(`http://localhost:3000/api/employees/${id}`);
       this.employee = response.data;
-      this.selectedDepartmentId = this.employee.department._id; // Nastavíme vybrané oddělení
+  
+      // Nastavíme selectedDepartmentId podle načtených dat
+      if (this.employee.departmentId && this.employee.departmentId._id) {
+        this.selectedDepartmentId = this.employee.departmentId._id;
+      }
+  
+      console.log('Loaded employee:', this.employee);
     } catch (error) {
       console.error('Error loading employee:', error);
     }
   }
+  
+  
+  
+    
 
   // Načtení seznamu oddělení pro výběr
   async loadDepartments() {

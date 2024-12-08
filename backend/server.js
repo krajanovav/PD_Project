@@ -120,6 +120,28 @@ app.get('/api/departments', (req, res) => {
     });
 });
 
+app.get('/api/employees/:id', (req, res) => {
+  const employeeId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+    return res.status(400).json({ message: 'Invalid employee ID' });
+  }
+
+  Employee.findById(employeeId)
+    .populate('departmentId') // Načtěte detaily oddělení
+    .then((employee) => {
+      if (!employee) {
+        return res.status(404).json({ message: 'Employee not found' });
+      }
+      res.json(employee);
+    })
+    .catch((err) => {
+      console.error('Error fetching employee:', err);
+      res.status(500).json({ message: 'Error fetching employee' });
+    });
+});
+
+
 // Spuštění serveru na portu 3000
 app.listen(3000, () => {
   console.log('Server běží na http://localhost:3000');
