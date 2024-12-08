@@ -12,27 +12,41 @@
   </ion-toolbar>
 </ion-header>
 
-
 <ion-content>
   <ion-item>
     <ion-label position="floating">Name</ion-label>
     <ion-input [(ngModel)]="employee.name" required></ion-input>
   </ion-item>
-
+  <ion-text color="danger" *ngIf="!employee.name && showError">
+    Name is required.
+  </ion-text>
+  
   <ion-item>
     <ion-label position="floating">Position</ion-label>
     <ion-input [(ngModel)]="employee.position" required></ion-input>
   </ion-item>
-
+  <ion-text color="danger" *ngIf="!employee.position && showError">
+    Position is required.
+  </ion-text>
+  
   <ion-item>
     <ion-label>Department</ion-label>
-    <ion-select [(ngModel)]="selectedDepartmentId">
+    <ion-select [(ngModel)]="selectedDepartmentId" (ionChange)="onDepartmentChange()">
       <ion-select-option *ngFor="let department of departments" [value]="department._id">
         {{ department.name }}
       </ion-select-option>
     </ion-select>
   </ion-item>
-  
+  <ion-text color="danger" *ngIf="!selectedDepartmentId && showError">
+    Department is required.
+  </ion-text>
+
+  <ion-item lines="none" *ngIf="selectedLocation">
+    <ion-label>
+      <h3>Location</h3>
+      <p>{{ selectedLocation }}</p>
+    </ion-label>
+  </ion-item>
 
   <ion-button expand="full" color="danger" *ngIf="!isNew" (click)="deleteEmployee()">
     Delete

@@ -5,24 +5,34 @@
 </ion-header>
 
 <ion-content>
+  <!-- Department Filter -->
   <ion-item>
-    <ion-searchbar
-      [(ngModel)]="searchQuery"
-      (ionInput)="searchEmployees()"
-      placeholder="Search employees"
-    ></ion-searchbar>
-    <ion-button [routerLink]="['/details', 'new']" color="primary" slot="end">Add</ion-button>
+    <ion-label>Filter by Department</ion-label>
+    <ion-select [(ngModel)]="selectedDepartment" (ionChange)="filterByDepartment()">
+      <ion-select-option value="">All Departments</ion-select-option>
+      <ion-select-option *ngFor="let department of departments" [value]="department._id">
+        {{ department.name }}
+      </ion-select-option>
+    </ion-select>
   </ion-item>
 
+  <!-- Employee List -->
   <ion-list>
     <ion-item *ngFor="let employee of employees">
       <ion-label>
         <h2>{{ employee.name }}</h2>
-        <p>{{ employee.position }}</p>
-        <p *ngIf="employee.department">Department: {{ employee.department.name }}</p>
+        <p>
+          Department: 
+          <span *ngIf="employee.departmentId?.name">
+            {{ employee.departmentId.name }}
+          </span>
+          <span *ngIf="!employee.departmentId">Not Assigned</span>
+        </p>
       </ion-label>
       <ion-button [routerLink]="['/details', employee._id]">Edit</ion-button>
       <ion-button (click)="deleteEmployee(employee._id)" color="danger">Delete</ion-button>
     </ion-item>
   </ion-list>
+  
+  
 </ion-content>
