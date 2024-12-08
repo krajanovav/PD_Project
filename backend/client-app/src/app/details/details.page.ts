@@ -100,4 +100,11 @@ export class DetailsPage implements OnInit {
       console.error('Error deleting employee:', error);
     }
   }
+  
+  goBack() {
+    this.router.navigate(['/home']); // Přesměrování na domovskou stránku
+  }
+  
 }
+
+

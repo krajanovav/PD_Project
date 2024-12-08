@@ -5,11 +5,14 @@
 </ion-header>
 
 <ion-content>
-  <ion-searchbar
-    [(ngModel)]="searchQuery"
-    (ionInput)="searchEmployees()"
-    placeholder="Search employees"
-  ></ion-searchbar>
+  <ion-item>
+    <ion-searchbar
+      [(ngModel)]="searchQuery"
+      (ionInput)="searchEmployees()"
+      placeholder="Search employees"
+    ></ion-searchbar>
+    <ion-button [routerLink]="['/details', 'new']" color="primary" slot="end">Add</ion-button>
+  </ion-item>
 
   <ion-list>
     <ion-item *ngFor="let employee of employees">
@@ -22,7 +25,4 @@
       <ion-button (click)="deleteEmployee(employee._id)" color="danger">Delete</ion-button>
     </ion-item>
   </ion-list>
-
-  <!-- Button to add new employee -->
-  <ion-button expand="full" [routerLink]="['/details', 'new']">Add New Employee</ion-button>
 </ion-content>

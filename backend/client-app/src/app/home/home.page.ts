@@ -37,12 +37,19 @@ export class HomePage implements OnInit {
   // Vyhledávání zaměstnanců podle dotazu
   async searchEmployees() {
     try {
+      if (!this.searchQuery.trim()) {
+        // Pokud není zadaný žádný dotaz, načteme všechny zaměstnance
+        this.loadEmployees();
+        return;
+      }
+  
       const response = await axios.get(`http://localhost:3000/api/employees/search/${this.searchQuery}`);
-      this.employees = response.data;
+      this.employees = response.data; // Aktualizujeme seznam zaměstnanců
     } catch (error) {
       console.error('Error searching employees:', error);
     }
   }
+  
 
   // Zobrazení formuláře pro přidání nového zaměstnanca
   async showAddEmployeeForm() {

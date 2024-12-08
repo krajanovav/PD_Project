@@ -173,6 +173,27 @@ app.put('/api/employees/:id', async (req, res) => {
   }
 });
 
+// Route pro vyhledávání zaměstnanců
+app.get('/api/employees/search/:query', (req, res) => {
+  const query = req.params.query;
+
+  Employee.find({
+    $or: [
+      { name: { $regex: query, $options: 'i' } },
+      { position: { $regex: query, $options: 'i' } },
+      { 'departmentId.departmentName': { $regex: query, $options: 'i' } }
+    ]
+  })
+    .populate('departmentId') // Načteme informace o oddělení
+    .then((employees) => {
+      res.json(employees);
+    })
+    .catch((err) => {
+      console.error('Error during search:', err);
+      res.status(500).json({ message: 'Error during search', error: err.message });
+    });
+});
+
 
 // Spuštění serveru na portu 3000
 app.listen(3000, () => {
