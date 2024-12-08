@@ -25,8 +25,9 @@ const Department = mongoose.model('Department', DepartmentSchema);  // Definujem
 const EmployeeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   position: { type: String, required: true },
-  department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, // Odkaz na oddělení
-  seqId: { type: mongoose.Schema.Types.ObjectId, unique: true }, // Sekvenční ID pro zaměstnanca
+  departmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }
+}, {
+  versionKey: false // Zakáže přidávání pole __v
 });
 const Employee = mongoose.model('Employee', EmployeeSchema);
 
@@ -35,15 +36,17 @@ const Employee = mongoose.model('Employee', EmployeeSchema);
 // Route pro získání všech zaměstnanců
 app.get('/api/employees', (req, res) => {
   Employee.find()
-    .populate('department')  // Načteme detaily oddělení
-    .sort({ seqId: 1 }) // Seřazení podle sekvenčního ID
+    .populate('departmentId')  // Změňte na správný název
+    .sort({ seqId: 1 })
     .then((employees) => {
       res.json(employees);
     })
     .catch((err) => {
-      res.status(500).json({ message: 'Chyba při získávání zaměstnanců' });
+      console.error('Error during fetching employees:', err); // Přidá detailní výpis chyby
+      res.status(500).json({ message: 'Chyba při získávání zaměstnanců', error: err.message });
     });
 });
+
 
 // Route pro přidání nového zaměstnance
 app.post('/api/employees', async (req, res) => {
